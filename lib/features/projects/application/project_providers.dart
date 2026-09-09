@@ -9,9 +9,10 @@ final projectsStreamProvider = StreamProvider<List<Project>>((ref) {
 
 /// FutureProvider retrieving a single project by its ID.
 final projectByIdProvider =
-    FutureProvider.family<Project?, String>((ref, id) async {
+    FutureProvider.autoDispose.family<Project?, String>((ref, id) async {
   return ref.watch(projectRepositoryProvider).getProject(id);
 });
+
 
 /// Riverpod provider for the [ProjectController].
 final projectControllerProvider =
