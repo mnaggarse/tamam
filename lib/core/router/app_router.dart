@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tamam/features/projects/presentation/screens/project_edit_screen.dart';
+import 'package:tamam/features/projects/presentation/screens/project_list_screen.dart';
 
 /// Riverpod provider exposing the application's GoRouter configuration.
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -40,13 +42,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/settings',
-                builder: (context, state) => const PlaceholderScreen(
-                  title: 'Settings',
-                  icon: Icons.settings_outlined,
-                  subtitle: 'Settings and preferences are coming in Phase 11',
-                ),
+                builder: (context, state) => const SettingsPlaceholderScreen(),
               ),
             ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/projects',
+        builder: (context, state) => const ProjectListScreen(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) => const ProjectEditScreen(),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (context, state) => ProjectEditScreen(
+              projectId: state.pathParameters['id'],
+            ),
           ),
         ],
       ),
@@ -92,6 +106,42 @@ class ScaffoldWithNavBar extends StatelessWidget {
             icon: Icon(Icons.settings_outlined),
             selectedIcon: Icon(Icons.settings),
             label: 'Settings',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Settings screen tab displaying configuration options and feature entries.
+class SettingsPlaceholderScreen extends StatelessWidget {
+  /// Creates a [SettingsPlaceholderScreen].
+  const SettingsPlaceholderScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Settings'),
+      ),
+      body: ListView(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.folder_outlined),
+            title: const Text('Projects'),
+            subtitle: const Text('Manage lists and project colors'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/projects'),
+          ),
+          const Divider(),
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(
+              child: Text(
+                'More settings coming in Phase 11',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
           ),
         ],
       ),
