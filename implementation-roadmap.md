@@ -1,6 +1,7 @@
-# TaskFlow — Agent-Ready Implementation Roadmap
+# Tamam — Agent-Ready Implementation Roadmap
 
 Each phase below is written to be handed to an AI coding agent as a **standalone prompt**. Every phase:
+
 - Builds on the previous phase's output (specified explicitly under "Depends on")
 - Includes **both** the data/logic layer AND the corresponding UI — nothing is "backend only"
 - Ends in a compiling, runnable, manually-testable state (never leaves the app broken)
@@ -19,7 +20,8 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** A running Flutter app with the full folder skeleton, theme, routing shell, and dependencies installed — but no real features yet. This is the foundation every later phase builds on.
 
 **Tasks:**
-- Create Flutter project, set package name/app name to "TaskFlow" (or user's chosen name)
+
+- Create Flutter project, set package name/app name to "Tamam" (or user's chosen name)
 - Add all dependencies from the package list (Riverpod, Drift, go_router, rrule, flutter_local_notifications, timezone, table_calendar, uuid, equatable, dev deps: build_runner, riverpod_generator, drift_dev, mocktail, very_good_analysis)
 - Create the full folder structure exactly as specified in project-plan.md §5 (empty feature folders are fine — `tasks/`, `projects/`, `tags/`, `calendar/`, `pomodoro/`, `habits/`, `settings/` each with `data/`, `application/`, `presentation/` subfolders)
 - Set up `lib/core/theme/app_theme.dart` with Material 3 light + dark ThemeData (basic, not final polish)
@@ -29,6 +31,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 - Add a smoke test in `test/` that pumps the app and confirms it builds
 
 **Acceptance criteria:**
+
 - `flutter run` launches the app with a bottom nav bar with 3 tabs, each showing placeholder content
 - `flutter analyze` passes with no errors
 - `flutter test` passes (smoke test)
@@ -46,6 +49,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** Stand up Drift, implement the `Project` table end-to-end, and ship a working Projects screen. This phase proves out the full data→UI pipeline (Drift → repository → Riverpod → widget) that every later feature will repeat.
 
 **Tasks — Data layer:**
+
 - `lib/core/database/database.dart`: Drift `@DriftDatabase` setup with SQLite connection (use `path_provider` for the app documents directory)
 - `lib/core/database/tables/projects_table.dart`: `Project` table — `id` (text, PK, UUIDv7), `name` (text), `color` (int), `icon` (text, nullable), `sortOrder` (int), `createdAt`, `updatedAt` (datetime), `deletedAt` (datetime, nullable)
 - `lib/core/database/daos/project_dao.dart`: CRUD methods + a `watchAllProjects()` stream query (excluding soft-deleted rows, ordered by `sortOrder`)
@@ -53,9 +57,11 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 - `lib/features/projects/data/project_repository.dart`: wraps the DAO, exposes domain-friendly methods (`createProject`, `updateProject`, `softDeleteProject`, `watchProjects`), maps Drift rows to a plain `Project` domain model in `lib/features/projects/data/models/project.dart`
 
 **Tasks — Application layer:**
+
 - `lib/features/projects/application/project_providers.dart`: Riverpod `StreamProvider` exposing `watchProjects()`, plus a `ProjectController` (Notifier) for create/update/delete actions
 
 **Tasks — UI layer:**
+
 - `lib/features/projects/presentation/screens/project_list_screen.dart`: list of projects with color swatch, name, tap to edit
 - `lib/features/projects/presentation/screens/project_edit_screen.dart`: form to create/edit a project (name field, color picker — a simple grid of ~12 preset colors is fine, no need for a full color wheel)
 - Add a "+" FAB on the project list that opens the edit screen in create mode
@@ -63,6 +69,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 - Swipe-to-delete or a delete button on each project row (calls `softDeleteProject`)
 
 **Acceptance criteria:**
+
 - User can create a project with a name and color, see it in the list, edit it, and delete it
 - Data persists across app restarts (kill and relaunch app, projects still there)
 - `deletedAt` is set on delete, not a hard SQL delete (verify by checking the row still exists in DB, just filtered from `watchProjects()`)
@@ -81,6 +88,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** Same full pipeline as Phase 1, applied to `Tag`. Deliberately kept separate from Projects so the agent works from a clean, small diff.
 
 **Tasks:**
+
 - `lib/core/database/tables/tags_table.dart`: `Tag` table — `id`, `name`, `color` (nullable), `createdAt`, `updatedAt`, `deletedAt`
 - `lib/core/database/daos/tag_dao.dart` — same CRUD + watch pattern as `project_dao.dart`
 - `lib/features/tags/data/tag_repository.dart` + `models/tag.dart`
@@ -89,6 +97,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 - Repository test mirroring Phase 1's test
 
 **Acceptance criteria:**
+
 - User can create, edit, delete tags from a Tags screen under Settings
 - Persists across restarts, soft-delete confirmed
 
@@ -105,14 +114,17 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** The centerpiece feature. Basic task CRUD with title, notes, and project assignment — no due dates, priority, subtasks, or tags yet (those are later phases so this one stays small and correct).
 
 **Tasks — Data layer:**
+
 - `lib/core/database/tables/tasks_table.dart`: `Task` table — `id`, `projectId` (nullable FK to Project, null = "Inbox"), `title`, `notes` (nullable), `isCompleted` (bool, default false), `completedAt` (nullable), `sortOrder` (int), `createdAt`, `updatedAt`, `deletedAt` (nullable). Add columns for `dueDate`, `dueTime`, `priority`, `recurrenceRuleId` now (nullable/default) even though they're unused until later phases — this avoids a schema migration in Phase 4.
 - `lib/core/database/daos/task_dao.dart`: CRUD + `watchAllTasks()`, `watchTasksByProject(projectId)`, both excluding soft-deleted and (for now) excluding completed unless explicitly requested
 - `lib/features/tasks/data/task_repository.dart` + `models/task.dart` (domain model mirrors the table for now; will grow in later phases)
 
 **Tasks — Application layer:**
+
 - `lib/features/tasks/application/task_providers.dart`: `StreamProvider` for the task list (default: Inbox / all incomplete tasks), `TaskController` Notifier with `createTask`, `updateTask`, `toggleComplete`, `softDeleteTask`
 
 **Tasks — UI layer:**
+
 - `lib/features/tasks/presentation/screens/task_list_screen.dart`: this becomes the "Tasks" tab's real content (replacing Phase 0's placeholder). Shows tasks grouped by project or flat list with project chip per row. Checkbox to complete, tap row to open detail/edit.
 - `lib/features/tasks/presentation/widgets/task_tile.dart`: single task row (checkbox, title, project color dot)
 - `lib/features/tasks/presentation/screens/task_detail_screen.dart`: view/edit a task — title, notes, project picker (dropdown of existing projects from Phase 1)
@@ -120,6 +132,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 - Swipe-to-delete on task rows
 
 **Acceptance criteria:**
+
 - User can quick-add a task by title, see it appear in the list instantly (via the Drift stream)
 - User can tap a task to open its detail screen, edit title/notes/project, save, and see changes reflected in the list
 - User can check a task complete (it should disappear from the default "incomplete" view — a "show completed" toggle is a nice-to-have but not required here)
@@ -140,6 +153,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** Activate the `dueDate`, `dueTime`, and `priority` columns already present in the schema (from Phase 3) with real UI, and add the smart list views that filter on them.
 
 **Tasks:**
+
 - Update `task_repository.dart` / domain model: expose and allow setting `dueDate`, `dueTime`, `priority` (int 0-3)
 - `task_detail_screen.dart`: add a due date picker (date + optional time), and a priority selector (4 options: None/Low/Medium/High, e.g. as colored flag icons or a segmented control)
 - `task_tile.dart`: show due date (formatted, e.g. "Today", "Tomorrow", "Mon 12 Jan" — build a small date-label helper in `core/utils/date_utils.dart`) and a priority color indicator
@@ -148,6 +162,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 - Sort task lists by priority then due date within each smart list (reasonable default; doesn't need to be configurable yet)
 
 **Acceptance criteria:**
+
 - Setting a due date/time and priority on a task persists and displays correctly on the task tile
 - Today / Next 7 Days / All / Completed views each show the correct filtered set, verified by creating tasks with varying due dates and checking each list
 - Overdue tasks (due date in the past, incomplete) are visually distinguished (e.g. red date text) in at least the "All" and "Today" views
@@ -165,6 +180,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** Wire the many-to-many relationship between tasks and tags, with UI to assign and filter by tags.
 
 **Tasks:**
+
 - `lib/core/database/tables/task_tags_table.dart`: join table — `taskId` (FK), `tagId` (FK), composite behavior enforced at the DAO/repository level (no duplicate pairs)
 - `lib/core/database/daos/task_tag_dao.dart`: `addTagToTask`, `removeTagFromTask`, `watchTagsForTask(taskId)`, `watchTasksForTag(tagId)`
 - Update `task_repository.dart` to expose tags as part of the task's returned domain model (a `List<Tag>` field), likely via a joined/combined query
@@ -173,6 +189,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 - Task list screen: add a filter bar/chip row to filter the current view by one or more tags
 
 **Acceptance criteria:**
+
 - User can attach multiple tags to a task and remove them
 - Tag filter on the task list correctly narrows results
 - Deleting a tag (from Phase 2's tag screen) removes its associations without crashing (verify the join rows are cleaned up or the query gracefully ignores orphaned refs)
@@ -190,6 +207,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** Add checklist-style subtasks within a task.
 
 **Tasks:**
+
 - `lib/core/database/tables/subtasks_table.dart`: `SubTask` — `id`, `taskId` (FK), `title`, `isCompleted`, `sortOrder`, `createdAt`, `updatedAt`, `deletedAt`
 - `lib/core/database/daos/subtask_dao.dart`: CRUD + `watchSubtasksForTask(taskId)`
 - `lib/features/tasks/data/` — extend repository with subtask methods, or a small dedicated `subtask_repository.dart` if that reads cleaner
@@ -197,6 +215,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 - `task_tile.dart`: show a small progress indicator if the task has subtasks (e.g. "2/5")
 
 **Acceptance criteria:**
+
 - User can add, complete, and delete subtasks within a task's detail screen
 - Subtask completion state persists and the progress indicator on the parent task tile updates correctly
 - Completing all subtasks does NOT auto-complete the parent task (keep behaviors independent unless you explicitly want that — note it as a deliberate choice)
@@ -214,12 +233,14 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** Manual reordering of tasks within a list (and optionally subtasks within a task), persisted via the existing `sortOrder` column.
 
 **Tasks:**
+
 - Wrap the task list in a reorderable list widget (`ReorderableListView` or similar)
 - On reorder, recompute `sortOrder` for affected rows and persist via a batch repository update (`reorderTasks(List<String> orderedIds)`)
 - Same treatment for the subtask list inside `task_detail_screen.dart` if in scope
 - Ensure watch queries order by `sortOrder` (should already be true from earlier phases — verify)
 
 **Acceptance criteria:**
+
 - Dragging a task to a new position persists across restart
 - Reordering doesn't disturb tasks in other projects/lists (sortOrder scoping is sane — either global or per-project, pick one and be consistent, per-project is recommended)
 
@@ -236,6 +257,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** Recurring tasks using the `rrule` package.
 
 **Tasks:**
+
 - `lib/core/database/tables/recurrence_rules_table.dart`: `RecurrenceRule` — `id`, `taskId` (FK, one-to-one with the "template" task), `rruleString` (text, raw RFC5545 RRULE)
 - `lib/core/database/daos/recurrence_dao.dart`
 - `lib/features/tasks/data/task_repository.dart`: on `toggleComplete` for a task that has a recurrence rule, instead of just marking complete: mark the current instance complete, use `rrule` to compute the next occurrence date from `rruleString`, and either (a) update the same task row's `dueDate` and reset `isCompleted` to false, or (b) create a new task row for the next occurrence and mark the old one permanently complete — **choose approach (a)** for v1 simplicity (single evolving row) unless the agent has strong reason otherwise; document the choice in a code comment since it affects history/analytics later
@@ -243,6 +265,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 - `task_tile.dart`: show a repeat icon on recurring tasks
 
 **Acceptance criteria:**
+
 - Creating a task with "Repeat: Daily" and completing it causes it to reappear with tomorrow's due date, still incomplete
 - Repeat icon displays correctly
 - Unit test: given a fixed RRULE string and completion date, `rrule` computation returns the expected next date (test the pure logic, not just the UI)
@@ -260,12 +283,14 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** Schedule and manage local reminder notifications tied to task due times.
 
 **Tasks:**
+
 - `lib/core/notifications/notification_service.dart`: initialize `flutter_local_notifications` + `timezone`, request permissions (handle Android 13+ runtime permission and iOS permission prompts)
 - `lib/core/notifications/notification_scheduler.dart`: `scheduleForTask(Task task)`, `cancelForTask(String taskId)` — called from the task repository whenever a task with a due date/time is created, updated, or deleted, so notifications always stay in sync with task state
 - Task detail screen: add a "Remind me" toggle/picker (e.g. "At time of due date", "15 min before", "1 hour before", "None") stored as a new nullable field on the task (`reminderMinutesBefore`, int, nullable) — small schema addition
 - Settings screen: add a notification permission status indicator + a button to open system settings if permission was denied
 
 **Acceptance criteria:**
+
 - Setting a due time + reminder on a task schedules a real local notification (test on a physical device/emulator by setting a due time 1-2 minutes out)
 - Editing or deleting the task correctly reschedules or cancels the notification (no duplicate or orphaned notifications — verify via the notification plugin's pending-notifications list)
 - Permission denial is handled gracefully (app doesn't crash, shows guidance instead)
@@ -283,11 +308,13 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** A calendar tab showing tasks by due date, using `table_calendar`.
 
 **Tasks:**
+
 - `lib/features/calendar/application/calendar_providers.dart`: provider that maps the task stream into a `Map<DateTime, List<Task>>` for the calendar widget's event loader
 - `lib/features/calendar/presentation/screens/calendar_screen.dart`: replaces Phase 0's placeholder Calendar tab. Month/week toggle, day cells show a dot/marker if tasks are due that day, tapping a day shows that day's tasks in a list below the calendar (reuse `task_tile.dart`)
 - Tapping a task in the day list opens `task_detail_screen.dart` (reuse existing route)
 
 **Acceptance criteria:**
+
 - Calendar correctly marks days with due tasks
 - Selecting a day shows the correct task list, matching what Phase 4's "Today" logic would show for that date
 - Navigating months/weeks works smoothly, no jank on typical task volumes (tens to low hundreds of tasks)
@@ -305,6 +332,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** Make the app feel finished, not scaffolded.
 
 **Tasks:**
+
 - Finalize light/dark ThemeData (typography scale, consistent spacing constants in `core/theme/`)
 - Add a dark/light/system theme toggle in Settings, persisted (simple key-value storage, e.g. `shared_preferences` — new minimal dependency, justified here)
 - Add empty-state illustrations/messages to: empty task list, empty project list, empty tag list, empty calendar day
@@ -312,6 +340,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 - Consistent iconography and spacing pass across all screens built in Phases 1-10
 
 **Acceptance criteria:**
+
 - Fresh install shows onboarding once, then never again (persisted flag)
 - Theme toggle works and persists across restart
 - No screen in the app shows a raw blank white space when data is empty — every list has a designed empty state
@@ -329,11 +358,13 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** Export the full local database to a JSON file and re-import it. Doubles as the future migration path to a sync backend.
 
 **Tasks:**
+
 - `lib/core/database/backup/backup_service.dart`: serialize all tables (projects, tags, tasks, subtasks, task_tags, recurrence_rules) to a single versioned JSON structure (include a `schemaVersion` field); deserialize + restore (with a clear "this will overwrite existing data" confirmation flow)
 - Use `share_plus` or platform file picker (new minimal dependency) to let the user save the export file and pick a file to import
 - Settings screen: "Export Data" and "Import Data" actions with confirmation dialogs
 
 **Acceptance criteria:**
+
 - Exporting then importing into a fresh app install fully restores all projects, tags, tasks (with due dates, priority, subtasks, tags, recurrence) exactly
 - Import validates the file (rejects malformed/foreign JSON gracefully with an error message, doesn't crash)
 
@@ -350,11 +381,13 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** Full-text search across task titles and notes.
 
 **Tasks:**
+
 - DAO: `searchTasks(String query)` using SQL `LIKE` (SQLite FTS5 is a nice upgrade but plain `LIKE` is sufficient for v1 data volumes)
 - `lib/features/tasks/presentation/screens/search_screen.dart`: search bar + results list (reuse `task_tile.dart`), accessible from an icon on the Tasks tab app bar
 - Debounce input so search doesn't query on every keystroke
 
 **Acceptance criteria:**
+
 - Typing a query returns matching tasks by title or notes content, updating live as the user types
 - Empty query shows no results / a prompt state, not the entire task list
 
@@ -371,6 +404,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** A focus timer feature, independent module, optionally linked to a task.
 
 **Tasks:**
+
 - `lib/core/database/tables/pomodoro_sessions_table.dart`: `id`, `taskId` (nullable FK), `startedAt`, `durationMinutes`, `completed` (bool)
 - `lib/features/pomodoro/data/pomodoro_repository.dart`
 - `lib/features/pomodoro/application/pomodoro_providers.dart`: timer state machine (idle/running/paused/break) as a Riverpod Notifier
@@ -378,6 +412,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 - Show a running-session indicator/badge somewhere persistent (e.g. task tile of the linked task) while active
 
 **Acceptance criteria:**
+
 - User can start a 25-minute (configurable) timer, optionally linked to a task, and it counts down correctly even if the app is backgrounded briefly (verify state isn't lost on a quick app switch)
 - Completed sessions are recorded and viewable (a simple list of past sessions is enough for v1, no charts required yet)
 
@@ -394,6 +429,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 **Goal:** Standalone habit tracking with streaks, as its own module.
 
 **Tasks:**
+
 - `lib/core/database/tables/habits_table.dart`: `id`, `name`, `color`, `targetFrequency` (e.g. "daily" for v1, keep it simple), `createdAt`, `deletedAt`
 - `lib/core/database/tables/habit_logs_table.dart`: `id`, `habitId` (FK), `date` (date only), `completed` (bool)
 - `lib/features/habits/data/habit_repository.dart` (streak calculation logic lives here — pure function, unit test it)
@@ -403,6 +439,7 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 - New nav entry for Habits (4th tab, or nested under a "More" tab if you want to keep bottom nav to 3-4 items)
 
 **Acceptance criteria:**
+
 - User can create a habit, mark it done for today, see the streak count update correctly (unit test the streak calculation with a few date sequences: consecutive days, a gap, marking today after missing yesterday)
 - Historical completions display correctly in the detail view
 
@@ -412,19 +449,21 @@ Flutter, Riverpod (+ riverpod_generator), Drift (SQLite), go_router, rrule, flut
 
 ---
 
-## Phase 16 — Home Screen Widgets *(optional, platform-specific)*
+## Phase 16 — Home Screen Widgets _(optional, platform-specific)_
 
 **Depends on:** Phase 4
 
 **Goal:** iOS/Android home screen widget showing today's tasks and a quick-add shortcut.
 
 **Tasks:**
+
 - Use `home_widget` package (new dependency) to bridge Flutter data to native widget views
 - Android: a simple `RemoteViews`-based widget listing today's incomplete tasks
 - iOS: a WidgetKit widget (requires native Swift code in `ios/`, not pure Dart — flag this clearly to the agent as needing native platform work, not just Flutter)
 - Sync widget data on every relevant task write (hook into the repository layer, same pattern as notifications in Phase 9)
 
 **Acceptance criteria:**
+
 - Widget added to home screen shows today's tasks and updates within a reasonable delay after in-app changes
 
 **Out of scope:** interactive widget actions (checking off a task from the widget) — static display only for v1.

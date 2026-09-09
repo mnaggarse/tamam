@@ -1,7 +1,8 @@
-# TaskFlow — Open Source TickTick Alternative
+# Tamam — Open Source TickTick Alternative
+
 ## Full Project Plan
 
-*Local-first, mobile-only (iOS/Android) MVP, built to support sync later without a rewrite.*
+_Local-first, mobile-only (iOS/Android) MVP, built to support sync later without a rewrite._
 
 ---
 
@@ -16,6 +17,7 @@ An open-source, privacy-respecting task manager inspired by TickTick, built in F
 ## 2. Feature Set
 
 ### MVP (v1.0)
+
 - Tasks: title, notes, due date/time, priority, subtasks, checklist items
 - Projects/Lists with custom colors and icons
 - Tags (many-to-many), with tag-based filtering
@@ -28,6 +30,7 @@ An open-source, privacy-respecting task manager inspired by TickTick, built in F
 - Full offline functionality, zero network dependency
 
 ### v1.x (fast follows)
+
 - Pomodoro timer tied to tasks (focus sessions logged per task)
 - Habit tracking (separate from tasks — streaks, calendar heatmap)
 - Search (full-text across tasks/notes)
@@ -36,6 +39,7 @@ An open-source, privacy-respecting task manager inspired by TickTick, built in F
 - Natural language quick-add ("Call mom tomorrow 5pm #family")
 
 ### v2.0+ (post local-only phase)
+
 - Sync backend (revisit backend choice — see §7)
 - Attachments (images/files on tasks)
 - Multi-device support
@@ -44,22 +48,22 @@ An open-source, privacy-respecting task manager inspired by TickTick, built in F
 
 ## 3. Tech Stack Summary
 
-| Layer | Choice | Why |
-|---|---|---|
-| Framework | Flutter (stable channel) | Given |
-| State management | Riverpod + riverpod_generator | Compile-safe, testable, pairs with Drift streams |
-| Local database | Drift (SQLite) | Relational model (tasks/subtasks/tags/projects), migrations, reactive streams |
-| Routing | go_router | Standard, deep-link ready, declarative |
-| Recurrence | rrule | RFC 5545 compliant, don't hand-roll this |
-| Notifications | flutter_local_notifications + timezone | Local scheduling, DST-safe |
-| Calendar UI | table_calendar | MIT licensed, lightweight, avoids Syncfusion licensing issues |
-| Forms/validation | reactive_forms or plain Riverpod state | Keep it simple for v1 |
-| Dependency injection | Riverpod providers (no separate DI package needed) | Riverpod already covers this |
-| Testing | flutter_test, mocktail, integration_test | Standard trio |
-| Linting | flutter_lints / very_good_analysis | Consistent OSS code style |
-| CI/CD | GitHub Actions + Codemagic (free tier for iOS signing) | No Mac needed for OSS contributors |
-| Localization | flutter_localizations + intl, slang or easy_localization | Plan for i18n early if you want OSS contributors translating |
-| Crash/analytics | None by default, or self-hosted-only (e.g. Sentry self-hosted), opt-in | Respect privacy positioning |
+| Layer                | Choice                                                                 | Why                                                                           |
+| -------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Framework            | Flutter (stable channel)                                               | Given                                                                         |
+| State management     | Riverpod + riverpod_generator                                          | Compile-safe, testable, pairs with Drift streams                              |
+| Local database       | Drift (SQLite)                                                         | Relational model (tasks/subtasks/tags/projects), migrations, reactive streams |
+| Routing              | go_router                                                              | Standard, deep-link ready, declarative                                        |
+| Recurrence           | rrule                                                                  | RFC 5545 compliant, don't hand-roll this                                      |
+| Notifications        | flutter_local_notifications + timezone                                 | Local scheduling, DST-safe                                                    |
+| Calendar UI          | table_calendar                                                         | MIT licensed, lightweight, avoids Syncfusion licensing issues                 |
+| Forms/validation     | reactive_forms or plain Riverpod state                                 | Keep it simple for v1                                                         |
+| Dependency injection | Riverpod providers (no separate DI package needed)                     | Riverpod already covers this                                                  |
+| Testing              | flutter_test, mocktail, integration_test                               | Standard trio                                                                 |
+| Linting              | flutter_lints / very_good_analysis                                     | Consistent OSS code style                                                     |
+| CI/CD                | GitHub Actions + Codemagic (free tier for iOS signing)                 | No Mac needed for OSS contributors                                            |
+| Localization         | flutter_localizations + intl, slang or easy_localization               | Plan for i18n early if you want OSS contributors translating                  |
+| Crash/analytics      | None by default, or self-hosted-only (e.g. Sentry self-hosted), opt-in | Respect privacy positioning                                                   |
 
 ---
 
@@ -122,7 +126,7 @@ Keep this list lean. Every added dependency is a maintenance burden for OSS cont
 Feature-first architecture. Each feature owns its data, logic, and UI; `core/` holds cross-cutting infrastructure.
 
 ```
-taskflow/
+Tamam/
 ├── android/
 ├── ios/
 ├── lib/
@@ -224,6 +228,7 @@ taskflow/
 ```
 
 **Rules that keep this maintainable:**
+
 - UI never talks to Drift directly — always through a repository (`task_repository.dart`). This is your future sync insertion point.
 - Riverpod providers live in `application/`, not scattered in widgets.
 - Each feature folder should be deletable without breaking unrelated features (loose coupling).
@@ -287,6 +292,7 @@ RecurrenceRule
 ## 7. Architecture Notes
 
 **Layering per feature:**
+
 ```
 Presentation (widgets, screens)
       ↓ watches
