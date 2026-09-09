@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tamam/features/projects/presentation/screens/project_edit_screen.dart';
 import 'package:tamam/features/projects/presentation/screens/project_list_screen.dart';
+import 'package:tamam/features/tags/presentation/screens/tag_edit_screen.dart';
+import 'package:tamam/features/tags/presentation/screens/tag_list_screen.dart';
 
 /// Riverpod provider exposing the application's GoRouter configuration.
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -60,6 +62,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: ':id',
             builder: (context, state) => ProjectEditScreen(
               projectId: state.pathParameters['id'],
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/tags',
+        builder: (context, state) => const TagListScreen(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) => const TagEditScreen(),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (context, state) => TagEditScreen(
+              tagId: state.pathParameters['id'],
             ),
           ),
         ],
@@ -132,6 +150,13 @@ class SettingsPlaceholderScreen extends StatelessWidget {
             subtitle: const Text('Manage lists and project colors'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/projects'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.label_outlined),
+            title: const Text('Tags'),
+            subtitle: const Text('Organize tasks with custom tags'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/tags'),
           ),
           const Divider(),
           const Padding(
