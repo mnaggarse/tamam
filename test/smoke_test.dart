@@ -30,8 +30,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Settings'), findsAtLeastNWidgets(1));
+    expect(find.text('Projects'), findsOneWidget);
     expect(
-      find.text('Settings and preferences are coming in Phase 11'),
+      find.text('More settings coming in Phase 11'),
       findsOneWidget,
     );
   });
