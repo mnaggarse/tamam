@@ -8,9 +8,11 @@ final tagsStreamProvider = StreamProvider<List<Tag>>((ref) {
 });
 
 /// FutureProvider retrieving a single tag by its ID.
-final tagByIdProvider = FutureProvider.family<Tag?, String>((ref, id) async {
+final tagByIdProvider =
+    FutureProvider.autoDispose.family<Tag?, String>((ref, id) async {
   return ref.watch(tagRepositoryProvider).getTag(id);
 });
+
 
 /// Riverpod provider for the [TagController].
 final tagControllerProvider =

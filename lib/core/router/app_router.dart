@@ -5,6 +5,8 @@ import 'package:tamam/features/projects/presentation/screens/project_edit_screen
 import 'package:tamam/features/projects/presentation/screens/project_list_screen.dart';
 import 'package:tamam/features/tags/presentation/screens/tag_edit_screen.dart';
 import 'package:tamam/features/tags/presentation/screens/tag_list_screen.dart';
+import 'package:tamam/features/tasks/presentation/screens/task_detail_screen.dart';
+import 'package:tamam/features/tasks/presentation/screens/task_list_screen.dart';
 
 /// Riverpod provider exposing the application's GoRouter configuration.
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -20,11 +22,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/tasks',
-                builder: (context, state) => const PlaceholderScreen(
-                  title: 'Tasks',
-                  icon: Icons.check_circle_outline,
-                  subtitle: 'Task management is coming in Phase 3',
-                ),
+                builder: (context, state) => const TaskListScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) => TaskDetailScreen(
+                      taskId: state.pathParameters['id']!,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

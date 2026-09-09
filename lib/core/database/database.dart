@@ -7,13 +7,18 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:tamam/core/database/daos/project_dao.dart';
 import 'package:tamam/core/database/daos/tag_dao.dart';
+import 'package:tamam/core/database/daos/task_dao.dart';
 import 'package:tamam/core/database/tables/projects_table.dart';
 import 'package:tamam/core/database/tables/tags_table.dart';
+import 'package:tamam/core/database/tables/tasks_table.dart';
 
 part 'database.g.dart';
 
 /// The central Drift database for Tamam.
-@DriftDatabase(tables: [Projects, Tags], daos: [ProjectDao, TagDao])
+@DriftDatabase(
+  tables: [Projects, Tags, Tasks],
+  daos: [ProjectDao, TagDao, TaskDao],
+)
 class AppDatabase extends _$AppDatabase {
   /// Creates an [AppDatabase] using standard file storage or a given
   /// [executor].
@@ -23,7 +28,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.connection);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -34,6 +39,9 @@ class AppDatabase extends _$AppDatabase {
       onUpgrade: (m, from, to) async {
         if (from < 2) {
           await m.createTable(tags);
+        }
+        if (from < 3) {
+          await m.createTable(tasks);
         }
       },
       beforeOpen: (details) async {
@@ -66,4 +74,9 @@ final projectDaoProvider = Provider<ProjectDao>((ref) {
 /// Riverpod provider exposing the [TagDao].
 final tagDaoProvider = Provider<TagDao>((ref) {
   return ref.watch(appDatabaseProvider).tagDao;
+});
+
+/// Riverpod provider exposing the [TaskDao].
+final taskDaoProvider = Provider<TaskDao>((ref) {
+  return ref.watch(appDatabaseProvider).taskDao;
 });
